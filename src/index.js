@@ -40,30 +40,32 @@ class Board extends React.Component {
             <Square
                 value={this.props.squares[i]}
                 onClick={() => this.props.onClick(i)}
+                key={i}
             />
         );
     }
 
     render() {
-        return (
-            <div>
-                <div className="board-row">
-                    {this.renderSquare(0)}
-                    {this.renderSquare(1)}
-                    {this.renderSquare(2)}
+        const listOfNines = Array(9);
+        listOfNines.map((item, idx) => {
+            return this.renderSquare(idx);
+        });
+        const grid = [];
+        let count = 0;
+        for (let i = 0; i < 3; ++i) {
+            const row = [];
+            for (let j = 0; j < 3; ++j) {
+                row.push(this.renderSquare(count));
+                count++;
+            }
+            grid.push(
+                <div className="board-row" key={i}>
+                    {row}
                 </div>
-                <div className="board-row">
-                    {this.renderSquare(3)}
-                    {this.renderSquare(4)}
-                    {this.renderSquare(5)}
-                </div>
-                <div className="board-row">
-                    {this.renderSquare(6)}
-                    {this.renderSquare(7)}
-                    {this.renderSquare(8)}
-                </div>
-            </div>
-        );
+            );
+        }
+
+        return <div>{grid}</div>;
     }
 }
 
@@ -71,7 +73,7 @@ class Game extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            history: [{ squares: Array(9).fill(null) }],
+            history: [{ squares: Array(9).fill(null), lastMove: [-1, -1] }],
             stepNumber: 0,
             xIsNext: true,
         };
@@ -92,7 +94,12 @@ class Game extends React.Component {
         //Square components re-render auto and Game has full control
         // over square components known as controlled com=ponenets.
         this.setState({
-            history: history.concat([{ squares: squares }]),
+            history: history.concat([
+                {
+                    squares: squares,
+                    lastMove: [(i % 3) + 1, parseInt(i / 3) + 1],
+                },
+            ]),
             xIsNext: !this.state.xIsNext,
             stepNumber: history.length, //history here is local variable referrin to old unconcatenated history, another advantage of immutability approach
         });
@@ -104,7 +111,11 @@ class Game extends React.Component {
         const winner = calculateWinner(current.squares);
 
         const moves = history.map((step, move) => {
-            const desc = move ? "Go to game # " + move : "Go to game start";
+            let desc = move
+                ? `Go to game #${move} col: ${step.lastMove[0]} row: ${step.lastMove[1]}`
+                : "Go to game start";
+            const stepNumber = this.state.stepNumber;
+            desc = move === stepNumber ? <b> {desc} </b> : desc;
             return (
                 <li key={move}>
                     <button onClick={() => this.jumpTo(move)}> {desc} </button>
